@@ -10,6 +10,7 @@
     const closeBtn = document.getElementById('chatClose');
     const COOLDOWN_MS = 2500;
     let busy = false, lastSent = 0, greeted = false;
+    const hist = [];
 
     function scrollDown() { body.scrollTop = body.scrollHeight; }
 
@@ -75,7 +76,7 @@
             const r = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: text }),
+                body: JSON.stringify({ message: text, history: hist.slice(-6) }),
                 signal: ctl.signal
             });
             clearTimeout(timer);
@@ -83,6 +84,7 @@
             setTyping(false);
             if (j && j.reply) {
                 addMsg(String(j.reply), 'bot');
+                hist.push({ role: 'user', text: text }, { role: 'bot', text: String(j.reply).slice(0, 300) });
                 if (j.wa) addWaButton();
             } else {
                 addMsg('Maaf, asisten sedang bermasalah. Silakan hubungi admin lewat WhatsApp ya.', 'bot');
