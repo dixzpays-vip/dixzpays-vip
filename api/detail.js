@@ -58,7 +58,7 @@ async function fetchAllProducts() {
             'Content-Type': 'application/json',
             // Kunci API dibatasi khusus domain kita (HTTP referrer restriction),
             // jadi request server-to-server ini perlu "mengaku" datang dari domain itu.
-            'Referer': 'https://dixz-vip.vercel.app/'
+            'Referer': 'https://dixzpays-vip.vercel.app/'
         },
         body: JSON.stringify(body)
     });

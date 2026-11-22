@@ -41,7 +41,7 @@ async function fsFetch(url, opts, ms = 6000) {
         return await fetch(url, {
             ...opts,
             signal: ac.signal,
-            headers: { 'Content-Type': 'application/json', Referer: 'https://dixz-vip.vercel.app/' }
+            headers: { 'Content-Type': 'application/json', Referer: 'https://dixzpays-vip.vercel.app/' }
         });
     } finally { clearTimeout(t); }
 }
