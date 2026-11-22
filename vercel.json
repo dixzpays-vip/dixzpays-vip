@@ -1,4 +1,7 @@
 {
+  "functions": {
+    "api/chat.js": { "maxDuration": 30 }
+  },
   "rewrites": [
     { "source": "/detail/:slug", "destination": "/api/detail?slug=:slug" },
     { "source": "/detail/:slug/:sub", "destination": "/api/detail?slug=:slug&sub=:sub" },
