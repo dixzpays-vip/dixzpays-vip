@@ -100,14 +100,15 @@
     padding: 8px 14px; border-radius: 999px;
 }
 
-.chat-form { display: flex; gap: 8px; padding: 10px; border-top: 1px solid #e3e6ee; background: #fff; }
+.chat-form { display: flex; align-items: flex-end; gap: 8px; padding: 10px; border-top: 1px solid #e3e6ee; background: #fff; }
 .chat-input {
-    flex: 1; font-family: inherit; font-size: 0.86rem; padding: 10px 12px;
+    flex: 1; font-family: inherit; font-size: 16px; line-height: 1.4; padding: 10px 12px;
     border: 1px solid #d5d9e4; border-radius: 12px; outline: none; background: #f5f6fa; color: #16213a;
+    resize: none; height: 42px; max-height: 96px; overflow-y: auto; box-sizing: border-box;
 }
 .chat-input:focus { border-color: var(--primary, #16213a); background: #fff; }
 .chat-send {
-    width: 42px; border-radius: 12px; background: var(--primary, #16213a); color: #fff;
+    width: 42px; height: 42px; flex-shrink: 0; border: 0; border-radius: 12px; background: var(--primary, #16213a); color: #fff;
     display: flex; align-items: center; justify-content: center; cursor: pointer;
     transition: transform 0.3s var(--ease-bounce, ease), opacity 0.2s ease;
 }
