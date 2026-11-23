@@ -490,10 +490,12 @@
         <button type="button" class="chat-close" id="chatClose" aria-label="Tutup">&times;</button>
     </div>
     <div class="chat-body" id="chatBody"></div>
-    <form class="chat-form" id="chatForm" autocomplete="off">
-        <input class="chat-input" id="chatInput" type="text" maxlength="200" placeholder="Tulis pertanyaan..." aria-label="Pesan" />
-        <button class="chat-send" id="chatSend" type="submit" aria-label="Kirim"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg></button>
-    </form>
+    <div class="chat-form" id="chatForm">
+        <textarea class="chat-input" id="chatInput" rows="1" maxlength="200" placeholder="Tulis pertanyaan..." aria-label="Pesan"
+            name="cs-msg-q7" autocomplete="off" autocorrect="off" autocapitalize="sentences" spellcheck="false"
+            enterkeyhint="send" data-lpignore="true" data-1p-ignore data-form-type="other"></textarea>
+        <button class="chat-send" id="chatSend" type="button" aria-label="Kirim"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg></button>
+    </div>
 </div>
 
 
