@@ -4,15 +4,41 @@
     const panel = document.getElementById('chatPanel');
     if (!fab || !panel) return;
     const body = document.getElementById('chatBody');
-    const form = document.getElementById('chatForm');
     const input = document.getElementById('chatInput');
     const sendBtn = document.getElementById('chatSend');
     const closeBtn = document.getElementById('chatClose');
+    const vv = window.visualViewport;
     const COOLDOWN_MS = 2500;
-    let busy = false, lastSent = 0, greeted = false;
     const hist = [];
+    let busy = false, lastSent = 0, greeted = false, base = null;
 
     function scrollDown() { body.scrollTop = body.scrollHeight; }
+
+    /* Panel: sisi atas dikunci. Saat keyboard muncul, hanya tinggi panel yang
+       menyusut (bagian bawah / kolom ketik naik ke atas keyboard); header dan
+       latar atas tidak bergeser. */
+    function vh() { return vv ? vv.height : window.innerHeight; }
+    function vtop() { return vv ? vv.offsetTop : 0; }
+    function measureBase() {
+        const h = vh();
+        const fullH = Math.min(540, h - 32);
+        base = { h: h, fullH: fullH, top: h - fullH - 16 };
+    }
+    function layoutPanel() {
+        if (!panel.classList.contains('open')) return;
+        const h = vh();
+        if (!base || h > base.h + 50) measureBase();
+        let height = Math.min(base.fullH, h - base.top - 8);
+        let top = base.top;
+        if (height < 240) { height = Math.min(base.fullH, h - 16); top = h - 8 - height; }
+        panel.style.top = (vtop() + Math.max(8, top)) + 'px';
+        panel.style.height = Math.max(160, height) + 'px';
+        panel.style.bottom = 'auto';
+        scrollDown();
+    }
+    if (vv) { vv.addEventListener('resize', layoutPanel); vv.addEventListener('scroll', layoutPanel); }
+    window.addEventListener('resize', layoutPanel);
+    window.addEventListener('orientationchange', function () { base = null; setTimeout(layoutPanel, 350); });
 
     function addMsg(text, who) {
         const el = document.createElement('div');
@@ -61,6 +87,8 @@
         } else if (!on && t) t.remove();
     }
 
+    function resetInput() { input.value = ''; input.style.height = ''; }
+
     async function send(text) {
         text = String(text || '').trim().slice(0, 200);
         if (!text || busy) return;
@@ -68,7 +96,7 @@
         if (now - lastSent < COOLDOWN_MS) return;
         lastSent = now; busy = true; sendBtn.disabled = true;
         addMsg(text, 'me');
-        input.value = '';
+        resetInput();
         setTyping(true);
         try {
             const ctl = new AbortController();
@@ -100,22 +128,36 @@
     }
 
     function openChat() {
+        base = null;
         panel.classList.add('open');
         fab.classList.add('chat-open');
+        layoutPanel();
         if (!greeted) {
             greeted = true;
             addMsg('Halo! Saya asisten AI Andika Store. Tanya soal produk, harga, atau cara order ya.', 'bot');
             addChips();
         }
-        setTimeout(function () { input.focus(); }, 300);
+        // Sengaja tidak auto-fokus: keyboard hanya muncul saat kolom ketik diketuk.
     }
     function closeChat() {
+        input.blur();
         panel.classList.remove('open');
         fab.classList.remove('chat-open');
     }
 
     fab.addEventListener('click', openChat);
     closeBtn.addEventListener('click', closeChat);
-    form.addEventListener('submit', function (e) { e.preventDefault(); send(input.value); });
+    sendBtn.addEventListener('click', function () { send(input.value); });
+    input.addEventListener('input', function () {
+        input.style.height = 'auto';
+        input.style.height = Math.min(input.scrollHeight, 96) + 'px';
+    });
+    // Enter = kirim (Shift+Enter = baris baru); juga menangani keyboard HP
+    input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input.value); }
+    });
+    input.addEventListener('beforeinput', function (e) {
+        if (e.inputType === 'insertLineBreak') { e.preventDefault(); send(input.value); }
+    });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeChat(); });
 })();
