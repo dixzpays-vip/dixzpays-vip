@@ -201,6 +201,19 @@ async function callAI(messages, ms) {
     } finally { clearTimeout(t); }
 }
 
+async function listModels() {
+    const key = process.env.KUNCIAI_API_KEY;
+    if (!key) return null;
+    const ac = new AbortController();
+    const t = setTimeout(() => ac.abort(), 8000);
+    try {
+        const r = await fetch(AI_URL.replace('/chat/completions', '/models'), { headers: { Authorization: `Bearer ${key}` }, signal: ac.signal });
+        const j = await r.json().catch(() => null);
+        const arr = j && Array.isArray(j.data) ? j.data : [];
+        return { status: r.status, ids: arr.map((m) => m && m.id).filter(Boolean).slice(0, 25) };
+    } catch (e) { return { status: 0, ids: [], error: String(e && e.message).slice(0, 120) }; } finally { clearTimeout(t); }
+}
+
 async function askAI(question, history, k) {
     const messages = [{ role: 'system', content: buildSystem(k) }, ...history, { role: 'user', content: question }];
     let r = await callAI(messages, 12000);
@@ -243,7 +256,8 @@ module.exports = async (req, res) => {
             errorData: kErr,
             kunciTerpasang: Boolean(process.env.KUNCIAI_API_KEY),
             model: AI_MODEL,
-            ai: { ok: Boolean(t.text), status: t.status, ms: t.ms, error: t.error }
+            ai: { ok: Boolean(t.text), status: t.status, ms: t.ms, error: t.error },
+            modelTersedia: await listModels()
         });
     }
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
