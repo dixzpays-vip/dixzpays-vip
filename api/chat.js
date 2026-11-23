@@ -9,7 +9,9 @@ const PROJECT_ID = 'dixzstore-bbb02';
 const FS_KEY = 'AIzaSyAYoOQXd-C8Nf11H1u1WJhjxBwchV7Uhwc'; // kunci web Firebase (publik by design)
 const FS_BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
 const AI_URL = 'https://kunciai.id/v1/chat/completions';
-const AI_MODEL = process.env.KUNCIAI_MODEL || 'kunciai/deepseek-v4-flash';
+// Daftar model dicoba berurutan; kalau satu gagal lanjut ke berikutnya. Bisa diganti lewat env KUNCIAI_MODEL (pisahkan koma).
+const MODELS = String(process.env.KUNCIAI_MODEL || 'kunciai/claude-haiku-5.5,kunciai/deepseek-v4.1-flash')
+    .split(',').map((m) => m.trim()).filter(Boolean).slice(0, 3);
 const SITE_NAME = 'Andika Store';
 const MAX_MSG = 200;
 const WA_HINT = 'Untuk itu silakan hubungi admin lewat WhatsApp ya.';
@@ -175,7 +177,7 @@ function cleanReply(t) {
         .slice(0, 700);
 }
 
-async function callAI(messages, ms) {
+async function callAI(messages, ms, model) {
     const key = process.env.KUNCIAI_API_KEY;
     if (!key) return { text: null, status: 0, ms: 0, error: 'KUNCIAI_API_KEY belum diisi di Vercel' };
     const ac = new AbortController();
@@ -185,7 +187,7 @@ async function callAI(messages, ms) {
         const r = await fetch(AI_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-            body: JSON.stringify({ model: AI_MODEL, messages, temperature: 0.3, max_tokens: 350 }),
+            body: JSON.stringify({ model: model || MODELS[0], messages, temperature: 0.3, max_tokens: 350 }),
             signal: ac.signal
         });
         const raw = await r.text();
@@ -216,9 +218,13 @@ async function listModels() {
 
 async function askAI(question, history, k) {
     const messages = [{ role: 'system', content: buildSystem(k) }, ...history, { role: 'user', content: question }];
-    let r = await callAI(messages, 12000);
-    if (!r.text && (r.status === 0 || r.status >= 500) && r.error !== 'KUNCIAI_API_KEY belum diisi di Vercel') r = await callAI(messages, 8000);
-    return r.text;
+    for (const m of MODELS.slice(0, 2)) {
+        const r = await callAI(messages, 10000, m);
+        if (r.text) return r.text;
+        // Kunci salah / kredit habis / dibatasi: model lain juga akan gagal, hentikan.
+        if (r.status === 401 || r.status === 402 || r.status === 429) break;
+    }
+    return null;
 }
 
 // ---------- batas pemakaian (per instance; usaha terbaik) ----------
@@ -250,12 +256,12 @@ module.exports = async (req, res) => {
         if (limited(ipOf())) return res.status(429).json({ error: 'Terlalu sering' });
         let k0 = null, kErr = null;
         try { k0 = await loadKnowledge(); } catch (e) { kErr = String(e && e.message); }
-        const t = await callAI([{ role: 'user', content: 'Jawab satu kata: halo' }], 12000);
+        const t = await callAI([{ role: 'user', content: 'Jawab satu kata: halo' }], 12000, MODELS[0]);
         return res.status(200).json({
             produkTerbaca: k0 ? k0.products.length : 0,
             errorData: kErr,
             kunciTerpasang: Boolean(process.env.KUNCIAI_API_KEY),
-            model: AI_MODEL,
+            model: MODELS,
             ai: { ok: Boolean(t.text), status: t.status, ms: t.ms, error: t.error },
             modelTersedia: await listModels()
         });
